@@ -1,0 +1,178 @@
+@import 'tailwindcss';
+
+/*
+  AminZi Tailor — "Glass" design system on Tailwind CSS v4 (from AminZi Glass.dc.html).
+  Liquid-glass panels over an aurora backdrop (Silk · Dusk · Alpine · Pearl), soft rounded
+  corners, accent glow on primary actions.
+
+  Colours change at runtime (backdrop + accent pickers), so ThemeRoot sets raw CSS variables
+  on the app root and the theme below maps them to Tailwind colours.
+
+  Speed: nothing loops (backdrop drift, ring spin, sync pulse) unless "Motion" is switched on.
+  Any endless animation makes the browser redraw the blurred panels every frame; measured on a
+  PC without graphics acceleration that alone took the idle frame rate from 58 to 22 fps.
+*/
+
+@theme inline {
+  --font-sans: 'Geist', 'Vazirmatn', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'Vazirmatn', ui-monospace, monospace; /* Vazirmatn catches Dari/Pashto */
+  --font-serif: 'Playfair Display', 'Vazirmatn', serif;
+
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-acc: var(--acc);
+  --color-acc-ink: var(--acc-ink);
+  --color-acc-soft: var(--acc-soft);
+  --color-on-acc: var(--btn-fg);
+  --color-glass: var(--glass);
+  --color-glass-strong: var(--glass-strong);
+  --color-stroke: var(--stroke);
+  --color-track: var(--track);
+  --color-sel: var(--sel);
+  --color-chip: var(--chip);
+  --color-field: var(--input);
+  --color-danger: var(--danger);
+  --color-logo: var(--logo-ink);
+  --color-scrim: var(--scrim);
+  --color-card-fg: var(--card-fg);
+  --color-warn: #e8a33d;
+}
+
+@theme {
+  --ease-meadow: cubic-bezier(.32, .72, 0, 1);
+  --ease-bounce: cubic-bezier(.34, 1.56, .64, 1);
+
+  --animate-enter: enter .45s var(--ease-meadow) both;
+  --animate-pop: pop .25s var(--ease-meadow) both;
+  --animate-fade: fade .25s ease-out both;
+  --animate-sheet: sheet-in .42s var(--ease-meadow) both;
+  --animate-sheet-rtl: sheet-in-rtl .42s var(--ease-meadow) both;
+  --animate-toast: toast-in .4s var(--ease-meadow) both;
+  --animate-pulse-ring: pulse-ring 2.4s ease-out infinite;
+  --animate-spin-slow: spin 16s linear infinite;
+  --animate-shake: shake .4s ease-in-out;
+  --animate-loadbar: loadbar 1.4s ease-in-out infinite;
+
+  @keyframes enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes pop { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes sheet-in { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+  @keyframes sheet-in-rtl { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(.96); } to { opacity: 1; transform: none; } }
+  @keyframes pulse-ring { 0%, 100% { box-shadow: 0 0 0 0 var(--acc-soft); } 50% { box-shadow: 0 0 0 8px transparent; } }
+  @keyframes shake { 0%, 100% { transform: none; } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+  @keyframes loadbar { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+  @keyframes drift { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(6%, 4%) scale(1.12); } }
+  @keyframes drift2 { 0%, 100% { transform: translate(0, 0) scale(1.05); } 50% { transform: translate(-8%, -5%) scale(.92); } }
+}
+
+/* ---------------------------------------------------------------- base */
+@layer base {
+  :root {
+    /* Silk (dark) defaults so nothing flashes before ThemeRoot runs. */
+    --bg: #07080b; --fg: #f3f5f9; --muted: rgba(243, 245, 249, .64);
+    --acc: #1db5a7; --acc-ink: #4be3d4; --btn-fg: #06201d; --acc-soft: #1db5a730;
+    --stroke: rgba(255, 255, 255, .07); --danger: #ff6b6b;
+    --hi: inset 0 1px 0 rgba(255, 255, 255, .1); --drop: 0 30px 60px -30px rgba(0, 0, 0, .7);
+    --blur: blur(30px) saturate(170%);
+  }
+  html, body { background: var(--bg); color: var(--fg); }
+  body { @apply font-sans text-sm leading-[1.45] antialiased; }
+  button { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  ::selection { background: var(--acc); color: var(--btn-fg); }
+  *:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+  input::placeholder, textarea::placeholder { color: var(--muted); opacity: .8; }
+  /* Dari/Pashto text runs right-to-left but the layout stays left-to-right (shop decision), so
+     single lines keep to the left edge like the English. Paragraphs (<p>) align to their own start. */
+  :where([dir='auto']) { text-align: left; }
+  :where(p[dir='auto']) { text-align: start; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; background: transparent; }
+  ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--acc), var(--acc-ink)); border-radius: 8px; }
+  @supports not selector(::-webkit-scrollbar) { * { scrollbar-width: thin; scrollbar-color: var(--acc) transparent; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+}
+
+/* Liquid-glass surface (utilities, so components can @apply them). */
+@utility glass { border: 1px solid var(--stroke); background-color: var(--glass); backdrop-filter: var(--blur); box-shadow: var(--hi), var(--drop); }
+@utility glass-strong { border: 1px solid var(--stroke); background-color: var(--glass-strong); backdrop-filter: var(--blur); box-shadow: var(--hi), var(--drop); }
+
+/* ------------------------------------------------- repeated primitives */
+@layer components {
+  .card { @apply glass rounded-[26px]; }
+
+  .btn {
+    @apply inline-flex h-[42px] items-center justify-center gap-1.5 rounded-full px-5 text-[13px] font-semibold whitespace-nowrap
+      transition-[transform,background-color,color] duration-150 ease-out active:scale-[.97] disabled:opacity-50;
+  }
+  .btn-acc { @apply bg-acc text-on-acc; box-shadow: var(--btn-sh); }
+  .btn-glass { @apply glass font-medium; }
+  .btn-chip {
+    @apply inline-flex h-[30px] items-center justify-center rounded-full border border-stroke bg-chip px-3 text-xs font-medium whitespace-nowrap
+      transition-colors hover:bg-sel active:scale-95;
+  }
+  .btn-link { @apply bg-transparent p-0 text-[13px] font-medium text-acc-ink hover:text-fg; }
+  /* Toggle chips: selected state is aria-pressed="true". */
+  .chip {
+    @apply inline-flex h-9 items-center justify-center rounded-full border border-stroke bg-chip px-3.5 text-[13px] font-medium whitespace-nowrap
+      transition-colors aria-pressed:border-acc aria-pressed:bg-acc aria-pressed:text-on-acc disabled:opacity-45;
+  }
+  .input {
+    @apply h-10 w-full rounded-[12px] border border-stroke bg-field px-3 text-sm font-medium text-fg outline-none focus-visible:border-acc;
+    box-shadow: var(--inset);
+  }
+  .field { @apply flex flex-col gap-1; }
+  .field > span:first-child { @apply text-xs text-muted; }
+  .eyebrow { @apply font-mono text-[11px] font-medium tracking-[1.4px] text-muted uppercase; }
+  .h-page { @apply m-0 font-serif text-[40px] leading-none font-medium tracking-[-1px] md:text-[52px]; }
+  .h-section { @apply font-serif text-[22px] font-medium; }
+  .list-btn {
+    @apply flex w-full items-center gap-2.5 rounded-[14px] bg-transparent p-2.5 text-start transition-colors hover:bg-sel
+      aria-[current=true]:bg-acc aria-[current=true]:text-on-acc;
+  }
+  .avatar { @apply flex flex-none items-center justify-center rounded-full border border-stroke bg-chip text-xs font-semibold; }
+  .dot { @apply inline-block size-2 flex-none rounded-full bg-acc; }
+  .boxed { @apply flex flex-col gap-2 rounded-[18px] border border-stroke bg-chip p-3.5; }
+  .alert { @apply block animate-pop text-[13px] text-danger; }
+  /* Active segment / nav item: accent fill with glow (Glass "act"). */
+  .act { background: var(--acc); color: var(--btn-fg); box-shadow: var(--act-sh); }
+  /* Floating sheet + search: a stronger blur than the panels. */
+  .sheet { backdrop-filter: blur(40px) saturate(180%); box-shadow: var(--hi), var(--drop), 0 40px 120px -40px rgba(0, 0, 0, .6); }
+  .toast { backdrop-filter: blur(30px) saturate(180%); }
+}
+
+/* ------------------------------------------ backdrop motion (opt-in) */
+[data-motion='on'] .bd-drift { animation: drift 22s ease-in-out infinite; will-change: transform; }
+[data-motion='on'] .bd-drift2 { animation: drift2 26s ease-in-out infinite; will-change: transform; }
+[data-motion='on'] .bd-spin { animation: spin 140s linear infinite; will-change: transform; }
+[data-motion='on'] .bd-spin-rev { animation: spin 180s linear infinite reverse; will-change: transform; }
+[data-motion='on'] .ring-spin { animation: spin 16s linear infinite; }
+[data-motion='on'] .pulse-ring { animation: pulse-ring 2.4s ease-out infinite; }
+
+/* Splash: logo pieces fly in, then the whole layer fades. */
+@keyframes sp-in { from { opacity: 0; transform: translate(var(--fx), var(--fy)) rotate(var(--fr)) scale(.6); } to { opacity: 1; transform: none; } }
+@keyframes sp-out { 0%, 82% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+@keyframes sp-word { from { opacity: 0; letter-spacing: .6em; } to { opacity: 1; letter-spacing: .08em; } }
+.splash { animation: sp-out 2.6s ease-out both; }
+.splash svg > * { transform-box: fill-box; transform-origin: center; animation: sp-in 1s var(--ease-meadow) both; }
+.splash svg > *:nth-child(3n) { --fx: -160px; --fy: -90px; --fr: -40deg; animation-delay: .15s; }
+.splash svg > *:nth-child(3n+1) { --fx: 180px; --fy: 60px; --fr: 30deg; animation-delay: .3s; }
+.splash svg > *:nth-child(3n+2) { --fx: -40px; --fy: 150px; --fr: 60deg; animation-delay: .45s; }
+.splash-word { animation: sp-word 1s .9s var(--ease-meadow) both; }
+
+/* Arabic-script text must never be letter-spaced or uppercased: it breaks the joins between letters. */
+html:lang(fa-AF) :is(.eyebrow, .tracking-arabic-safe), html:lang(ps) :is(.eyebrow, .tracking-arabic-safe) { letter-spacing: 0; text-transform: none; }
+html:lang(fa-AF) .h-page, html:lang(ps) .h-page { letter-spacing: 0; line-height: 1.2; }
+
+/* ---------------------------------------------------------- printing */
+#print-root { display: none; }
+@media print {
+  body > #root { display: none !important; }
+  #print-root { display: block !important; color: #000; background: #fff; }
+  html, body { background: #fff !important; }
+}
