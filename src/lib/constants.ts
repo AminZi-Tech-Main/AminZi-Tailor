@@ -50,7 +50,7 @@ export const ACCENTS = {
 } as const;
 export type AccentKey = keyof typeof ACCENTS;
 
-export const SUPPORT_PHONE = '+93 0067 306';
+export const SUPPORT_PHONE = '+93 73 006 7306';
 
 export const ICONS = {
   dashboard: 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z',
